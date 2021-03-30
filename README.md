@@ -1,5 +1,5 @@
 # Calculator
-Вы должны обладать ссылкой (https://github.com/SunnBr0/test_01).
+Вы должны обладать ссылкой (https://github.com/SunnBr0/calculator).
 Теперь осталось зайти в Eclipse, зайти в workspace(свой или новый).
 Как откроется IDE сверху выбираем Window->Percpective->Open Percpective->Other...->Git.
 Откроется специальное окно, нужно нажать clone git repository(где есть желтые значками).
