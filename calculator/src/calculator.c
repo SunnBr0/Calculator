@@ -12,7 +12,7 @@
 Жмем finish и видим, что появилась папка в git repositories заходим в эту папку, дальше Working tree.
 Видим папку calculator, жмем 1 раз на нее, потом правой кнопкой. И жмем Import Project.
 Появляется окно, в нем ничего выбирать не нужно, просто если Eclipse выбрал не ту папку, то стоит ее редактировать.
-Жмем finish и уже проект появляется в C/C++. Теперь вы можете смотрет/ код(calculator/src/calculator.c)
+Жмем finish и уже проект появляется в C/C++. Теперь вы можете смотреть код(calculator/src/calculator.c)
 
 */
 #include <stdio.h>
@@ -20,20 +20,13 @@
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
-//	float *onevector,*twovector,*result;
-//	int size;
-//	printf("Введите размер вектора");
-//	onevector = malloc(size*sizeof(int));
-//	twovector = malloc(size*sizeof(int));
-//	result = malloc(size*sizeof(int));
 	float a, b, res, stepen;
 	char operation;
 	char next;
 	printf("Hello , i am cancilator\n");
 	printf("My operation:\n");
 	printf("+- вы можете plus два числа ( 1 + 2 ) или minus ( 3 - 2 )\n");
-	printf("* или / вы можете умножить ( 1 * 3 ) или поделить ( 1 / 2 )\n ");
-	printf(
+	printf("* или / вы можете умножить ( 1 * 3 ) или поделить ( 1 / 2 )\n ");	printf(
 			"^ вы можете возвести в степень даже в отрицательную ( 2 ^ 3 ) , ( 5 ^ -2 )\n");
 	printf("! вы можете найти факториал числа ( 5 ! )\n\n");
 	do {
