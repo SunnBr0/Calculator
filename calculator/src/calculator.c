@@ -97,14 +97,12 @@ float* func_vect(char operation, int size, float *onevector, float *twovector) {
                 res_vect[i] = onevector[i] + twovector[i];
             }
             return res_vect;
-
         case '-':
             res_vect = malloc(size * sizeof(float));
             for (int i = 0; i < size; i++) {
                 res_vect[i] = onevector[i] - twovector[i];
             }
             return res_vect;
-
         case '*':
             res_vect = malloc(sizeof(float));
             res_vect[0] = 0;
@@ -164,17 +162,14 @@ void result_add_element(struct outputList *res_current, struct inputList *curren
 }
 
 int main(int argc, char *argv[]) {
-
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
-
     char in[100], out[100];
     char n = 'y';
     FILE *inFile, *outFile;
     struct inputList *head, *current; //указатели на начало inputList списка и текущий элемент
     struct outputList *head_result, *current_result;//указатели на начало outputList списка и текущий элемент
     while (n == 'y') {
-
         printf("Enter input file name: ");         // просит ввести файл откуда брать данные
         scanf("%s", in);
         inFile = fopen(in,"r");
