@@ -1,15 +1,20 @@
 /*Name        : calculator.c
  Author      : Vladimir Voronov
- Version     : 3
+ Version     : 3.5
  Copyright   : VoronovVladimirIVT.VSU
  Description : calculator
  Git	     : Вы должны обладать ссылкой (https://github.com/SunnBr0/calculator).
 Калькулятор поддерживает работу с числами и с векторами,
 операция для чисел(+,*,-,/,^,!) операции для векторов (+,-,*(скалярное умножение))
+ Калькулятор может работать с входными файлами и также выводить результат в файл
 Обновление:
-Калькулятор может работать с входными файлами и также выводить результат в файл
+Теперь выполнение операций идёт не синхронно с чтением из файла, а из списка.
+Теперь через структуру inputList делаем односвязанный-список с входными данными,а через структуру outputList
+делаем односвязанный-список с результатами вычислений
 Пример:
 Назовём файл input.txt ,запишем туда эти выражения:
+s - алгебраический калькулятор
+v - векторный калькулятор
 s + 1.1 5.9
 s - 4.25 0.25
 s / 2.5 1.25
@@ -24,23 +29,152 @@ v * 3 1 4 1 2 -2 -2
 #include <stdio.h>
 #include <stdlib.h>
 
-int main() {
+// список для входных данных
+struct inputList {
+    char operation, vbor;
+    int size;
+    float *x, *y;
+    struct inputList *next;
+};
+
+// список для выходных данных
+struct outputList {
+    float *result;
+    struct outputList *res_next;
+};
+
+// функция для операций с числами
+float* func_numb(char operation, float *one_number, float *two_number) {
+    float fuctorial, stepen, *result_numb;
+    result_numb = malloc(sizeof(float));
+    switch (operation) {
+        case '+':
+            result_numb[0] = one_number[0] + two_number[0];
+            return result_numb;
+        case '-':
+            result_numb[0] = one_number[0] - two_number[0];
+            return result_numb;
+        case '*':
+            result_numb[0] = one_number[0] * two_number[0];
+            return result_numb;
+        case '/':
+            if (two_number != 0) {
+                result_numb[0] = one_number[0] / two_number[0];
+                return result_numb;
+            } else {
+                return 0;
+            }
+        case '!':
+            fuctorial = 1;
+            for (int i = 1; i <= one_number[0]; i++) {
+                fuctorial *= i;
+            }
+            result_numb[0] = fuctorial;
+            return result_numb;
+        case '^':
+            fuctorial = 1;
+            stepen = 1;
+            for (int i = 1; i <= two_number[0]; i++) {
+                stepen *= one_number[0];
+            }
+            result_numb[0] = stepen;
+            return result_numb;
+    }
+    return one_number;
+    return two_number;
+    free(one_number);
+    free(two_number);
+    free(result_numb);
+}
+
+// функция для операций с векторами
+float* func_vect(char operation, int size, float *onevector, float *twovector) {
+    float *res_vect;
+    switch (operation) {
+        case '+':
+            res_vect = malloc(size * sizeof(float));
+            for (int i = 0; i < size; i++) {
+                res_vect[i] = onevector[i] + twovector[i];
+            }
+            return res_vect;
+
+        case '-':
+            res_vect = malloc(size * sizeof(float));
+            for (int i = 0; i < size; i++) {
+                res_vect[i] = onevector[i] - twovector[i];
+            }
+            return res_vect;
+
+        case '*':
+            res_vect = malloc(sizeof(float));
+            res_vect[0] = 0;
+            for (int i = 0; i < size; i++) {
+                res_vect[0] += onevector[i] * twovector[i];
+            }
+            return res_vect;
+    }
+    return onevector;
+    return twovector;
+    free(onevector);
+    free(twovector);
+    free(res_vect);
+}
+
+// считывание указателей, добавление чисел
+float* add_numb(FILE *input, int size) {
+    float *numb;
+    numb = malloc(size * sizeof(float));
+    for (int i = 0; i < size; i++) {
+        fscanf(input, "%f", &numb[i]);
+    }
+    return numb;
+}
+
+// добавление одного элемента списка для входных данных
+void add_element(struct inputList *current, FILE *input) {
+    struct inputList *current_elem = malloc(sizeof(struct inputList));
+    fscanf(input, " %c", &current_elem->vbor);
+    fscanf(input, " %c", &current_elem->operation);
+    if (current_elem->vbor == 'v') {
+        fscanf(input, " %i", &current_elem->size);
+    } else {
+        current_elem->size = 1;
+    }
+    if (current_elem->operation != '!') {
+        current_elem->x = add_numb(input, current_elem->size);
+        current_elem->y = add_numb(input, current_elem->size);
+    } else {
+        current_elem->x = add_numb(input, current_elem->size);
+        current_elem->y = NULL;
+    }
+    current_elem->next = NULL; // последний элемент списка
+    current->next = current_elem; // переустановка указателя
+}
+
+// добавление элемента списка для выходных данных
+void result_add_element(struct outputList *res_current, struct inputList *current) {
+    struct outputList *z_res = malloc(sizeof(struct inputList));
+    if (current->vbor == 'v') {
+        z_res->result = func_vect(current->operation, current->size, current->x, current->y);
+    } else {
+        z_res->result = func_numb(current->operation, current->x, current->y);
+    }
+    z_res->res_next = NULL;
+    res_current->res_next = z_res;
+}
+
+int main(int argc, char *argv[]) {
+
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
-    char in[100],out[100],vbor,operation,next;
-    FILE *inFile,*outFile;
-    float *onevector,*twovector;
-    int size;
-    float a, b, res, stepen;
-    printf("you want to work with vectors ");
-    printf("Hello , i am cancilator\n");
-    printf("My operation:\n");
-    printf("+- you can add two numbers ( 1 + 2 ) or minus ( 3 - 2 )\n");
-    printf("* or / you can multiply ( 1 * 3 ) or divide it ( 1 / 2 )\n ");
-    printf("^ you can raise to a power even to a negative one ( 2 ^ 3 ) , ( 5 ^ -2 )\n");
-    printf("! you can find the factorial of a number ( 5 ! )\n");
-    printf("Also, the calculator works with vectors,you can (+ - *)\n\n");
-    do{
+
+    char in[100], out[100];
+    char n = 'y';
+    FILE *inFile, *outFile;
+    struct inputList *head, *current; //указатели на начало inputList списка и текущий элемент
+    struct outputList *head_result, *current_result;//указатели на начало outputList списка и текущий элемент
+    while (n == 'y') {
+
         printf("Enter input file name: ");         // просит ввести файл откуда брать данные
         scanf("%s", in);
         inFile = fopen(in,"r");
@@ -55,136 +189,90 @@ int main() {
         printf("\nEnter output file name: ");   //просит ввести файл куда записовать данные
         scanf("%s", out);
         outFile = fopen(out,"w");
-        do {
-            fprintf(outFile,"What will you work with with numbers or vectors?  (s - numbers, v-vectors)\n"); // выбор с чем работать с числами или с векторами
-            fscanf(inFile," %c",&vbor);     // читает с файла с чем работать(с векторами или числами)
-            fprintf(outFile,"%c\n",vbor);
-            if(vbor == 'v'){
-                fscanf(inFile," %c",&operation); // читает с файла операцию
-                fprintf(outFile,"Enter the size of the vector:\n");
-                fscanf(inFile,"%i",&size);        // читает с файла размер вектора
-                fprintf(outFile,"%i\n",size);
-                onevector = malloc(size*sizeof(int));
-                twovector = malloc(size*sizeof(int));
-                fprintf(outFile,"Enter vector one:\n");
-                for(int i = 0; i < size ;i++){fscanf(inFile," %f",&onevector[i]);fprintf(outFile,"%f\n",onevector[i]);} // заполняем первый вектор
-                fprintf(outFile,"Enter vector two:\n");
-                for(int i = 0; i < size ;i++){fscanf(inFile," %f",&twovector[i]);fprintf(outFile,"%f\n",twovector[i]);} // заполняем второй вектор
-                fprintf(outFile,"Enter the operation on the vectors(+ - *):\n");
-                fprintf(outFile,"%c\n",operation);     // выводит в файл операцию
-                switch(operation){		// операции с векторами
-                    case('+'):
-                        fprintf(outFile, "( ");
-                        for (int i = 0; i < size; i++)
-                            fprintf(outFile, "%.2f ", onevector[i]);
-                        fprintf(outFile, ") + ( ");
-                        for (int i = 0; i < size; i++)
-                            fprintf(outFile, "%.2f ", twovector[i]);
-                        fprintf(outFile, ") = ( ");
-                        for (int i = 0; i < size; i++)
-                            fprintf(outFile, "%.2f ", onevector[i] + twovector[i]);
-                        fprintf(outFile, ")");
-                        fprintf(outFile,"\n\n");
-                        break;
-                    case('-'):
-                        fprintf(outFile, "( ");
-                        for (int i = 0; i < size; i++)
-                            fprintf(outFile, "%.2f ", onevector[i]);
-                        fprintf(outFile, ") + ( ");
-                        for (int i = 0; i < size; i++)
-                            fprintf(outFile, "%.2f ", twovector[i]);
-                        fprintf(outFile, ") = ( ");
-                        for (int i = 0; i < size; i++)
-                            fprintf(outFile, "%.2f ", onevector[i] - twovector[i]);
-                        fprintf(outFile, ")");
-                        fprintf(outFile,"\n\n");
-                        break;
-                    case('*'):
-                        fprintf(outFile, "( ");
-                        for (int i = 0; i < size; i++)
-                            fprintf(outFile, "%.2f ", onevector[i]);
-                        fprintf(outFile, ") * ( ");
-                        for (int i = 0; i < size; i++)
-                            fprintf(outFile, "%.2f ", twovector[i]);
-                        fprintf(outFile, ") = ");
-                        for (int i = 0; i < size; ++i) {
-                            if (i != size - 1 ){fprintf(outFile, "%.2f ", onevector[i]*twovector[i]);
-                                fprintf(outFile,"+ ");
-                            }
-                            else{
-                                fprintf(outFile, "%.2f ", onevector[i]*twovector[i]);
-                            }
-                        }
-                        fprintf(outFile, " = ");
-                        for (int i = 0; i < size; i++)
-                            res += onevector[i] * twovector[i];
-                        fprintf(outFile, "%.2f ", res);
-                        fprintf(outFile,"\n\n");
-                        break;
-                    default:				                 // если операция не определена то будет ошибка
-                        printf("Error\n");
-                }
-                free(onevector);            //очистка памяти
-                free(twovector);
-            }else{
-                fscanf(inFile," %c",&operation);        // читает с файла операцию
-                if (operation != '!') {	                     // тут необходимое условие тк для факториала нужно только ввести число и операцию
-                    fscanf(inFile," %f %f",&a,&b);
-                    switch (operation) {                     //тут происходит выбор операции над числом или числами
-                        case ('+'):
-                            fprintf(outFile,"%f %c %f = %f\n", a, operation, b, a + b);
-                            fprintf(outFile,"\n");
-                            break;
-                        case ('-'):
-                            fprintf(outFile,"%f %c %f = %f\n", a, operation, b, a - b);
-                            fprintf(outFile,"\n");
-                            break;
-                        case ('/'):
-                            fprintf(outFile,"%f %c %f = %f\n", a, operation, b, a / b);
-                            fprintf(outFile,"\n");
-                            break;
-                        case ('*'):
-                            fprintf(outFile,"%f %c %f = %f\n", a, operation, b, a * b);
-                            fprintf(outFile,"\n");
-                            break;
-                        case ('^'):			                     // помимо простых действий над число ( + - * /),
-                            stepen = 1;	                         //где нужно ничего особенно пиcать для реализации
-                            if (b >= 0) {                        // в отличие от возведения в степень,где для реализации нужен цикл for
-                                for (int i = 1; i <= b; i++) {
-                                    stepen *= a;
-                                }
-                                fprintf(outFile,"%f %c %f = %f\n", a, operation, b, stepen);
-                            } else if (b < 0) {
-                                for (int i = 0; i > b; i--) {
-                                    stepen *= a;
-                                }
-                                fprintf(outFile,"%f %c %f = %f\n", a, operation, b, 1 / stepen);
-
-                            }
-                            fprintf(outFile,"\n");
-                            break;
-                        default:				                 // если операция не определена то будет ошибка
-                            fprintf(outFile,"Error\n");
-                    }
-                } else {
-                    fscanf(inFile," %f",&a);
-                    res = 1;
-                    if (a >= 0 && (a <= (int)a)) {
-                        for (int i = 1; i <= a; i++) {       // факториал реализован через цикл for
-                            res *= i;
-                        }
-                        fprintf(outFile,"%f %c = %f\n", a, operation, res);
-                        fprintf(outFile,"\n");
-                    } else {								 // обработка ошибки
-                        fprintf(outFile,"Error\n");
-                    }
-                }
+        if (feof(inFile) == 0) {
+            head = malloc(sizeof(struct inputList)); //  head - указатель на структуру,на его начало
+            fscanf(inFile, " %c", &head->vbor);
+            fscanf(inFile, " %c", &head->operation);
+            if (head->vbor == 'v') {
+                fscanf(inFile, " %i", &head->size);
+            } else {
+                head->size = 1;
             }
-        } while (feof(inFile) == 0);							 // цикл для того чтобы пользователь продолжил считать либо закончил работу
-        fclose(outFile);        // закрывает файл при завершении работы с файлом ввода
-        clearerr(outFile);     // очистка
-        printf("\nWant to work with new files(input and output)?\n");  // хотите работать с новыми файлами
-        scanf(" %c", &next);
-    }while (next == 'y');
+            if (head->operation != '!') {
+                head->x = add_numb(inFile, head->size);
+                head->y = add_numb(inFile, head->size);
+            } else {
+                head->x = add_numb(inFile, head->size);
+                head->y = NULL;
+            }
+            current = head; // current указатель на структуру а именно на текущие положение
+            while (feof(inFile) == 0) { // заполнение односвязанного списка вхожными данными из файла
+                add_element(current, inFile);
+                current = current->next;
+            }
+            head_result = malloc(sizeof(struct outputList)); // head - указатель на структуру,на его начало
+            current = head;
+            if (current->vbor == 'v') {
+                head_result->result = func_vect(current->operation, current->size, current->x,
+                                     current->y);
+            } else {
+                head_result->result = func_numb(current->operation, current->x, current->y);
+            }
+            head_result->res_next = NULL;
+            current = current->next;
+            current_result = head_result;
+            while (current != NULL) { // пока элемент списка не последниий
+                result_add_element(current_result, current);
+                // переустановка указателей на следующий элемент
+                current = current->next;
+                current_result = current_result->res_next;
+            }
+            current = head;
+            current_result = head_result;
+            fclose(inFile);
+            outFile = fopen(out, "w");
+            while (current != NULL) //запись ответа в output
+            {
+                fprintf(outFile,"What will you work with with numbers or vectors?  (s - numbers, v-vectors)\n"); // выбор с чем работать с числами или с векторами
+                fprintf(outFile,"%c\n",current->vbor);
+                if (current->vbor == 'v') {
+                    fprintf(outFile,"Enter the size of the vector:\n");
+                    fprintf(outFile,"%i\n",current->size);
+                    fprintf(outFile,"Enter vector one:\n");
+                    for(int i = 0; i < current->size ;i++){fprintf(outFile,"%f\n",current->x[i]);} // заполняем первый вектор
+                    fprintf(outFile,"Enter vector two:\n");
+                    for(int i = 0; i < current->size ;i++){fprintf(outFile,"%f\n",current->y[i]);} // заполняем второй вектор
+                    fprintf(outFile,"Enter the operation on the vectors(+ - *):\n");
+                    fprintf(outFile,"%c\n",current->operation);
+                    fprintf(outFile, "(");
+                    for (int i = 0; i < current->size; i++) {
+                        fprintf(outFile, " %.2f", current->x[i]);
+                    }
+                    fprintf(outFile, ") %c (", current->operation);
+                    for (int i = 0; i < current->size; i++) {
+                        fprintf(outFile, " %.2f", current->y[i]);
+                    }
+                    fprintf(outFile, " ) = ");
+                    if (current->operation != '*') {
+                        fprintf(outFile, "( ");
+                        for (int i = 0; i < current->size; i++) {
+                            fprintf(outFile, "%.2f ", current_result->result[i]);
+                        }
+                        fprintf(outFile, ")\n\n");
+                    } else {
+                        fprintf(outFile, "%.2f\n\n", current_result->result[0]);
+                    }
+                } else if (current->vbor == 's') {
+                    fprintf(outFile, "%.2f %c %.2f = %.2f\n\n", current->x[0], current->operation,current->y[0], current_result->result[0]);
+                }
+                current = current->next;
+                current_result = current_result->res_next;
+            }
+            fclose(outFile);
+        }
+        printf("\nWant to work with new files(input and output)?\n");
+        scanf( "%s", &n);
+    }
     return 0;
 }
+
